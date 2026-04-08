@@ -1,0 +1,1516 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<title>BitMark — CISPA Helmholtz</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,400;0,9..144,500;1,9..144,300;1,9..144,400&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0a0e1a;
+    --bg-2: #121826;
+    --bg-3: #1a2234;
+    --ink: #f5f1e8;
+    --ink-dim: #94a3b8;
+    --ink-dimmer: #475569;
+    --accent: #7dd3fc;
+    --warn: #fbbf24;
+    --warn-soft: rgba(251, 191, 36, 0.15);
+    --danger: #f87171;
+    --success: #4ade80;
+    --line: rgba(245, 241, 232, 0.1);
+    --line-strong: rgba(245, 241, 232, 0.22);
+    --serif: 'Fraunces', 'Times New Roman', serif;
+    --sans: 'IBM Plex Sans', system-ui, sans-serif;
+    --mono: 'IBM Plex Mono', 'Courier New', monospace;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+
+  html, body {
+    height: 100%;
+    overflow: hidden;
+    background: var(--bg);
+    color: var(--ink);
+    font-family: var(--sans);
+    -webkit-font-smoothing: antialiased;
+    user-select: none;
+    -webkit-user-select: none;
+  }
+
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background:
+      radial-gradient(ellipse 80% 60% at 15% 10%, rgba(125, 211, 252, 0.08), transparent 60%),
+      radial-gradient(ellipse 70% 50% at 85% 90%, rgba(251, 191, 36, 0.06), transparent 60%),
+      radial-gradient(ellipse 100% 100% at 50% 50%, transparent 40%, rgba(0,0,0,0.4) 100%);
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  body::after {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='3'/%3E%3C/filter%3E%3Crect width='200' height='200' filter='url(%23n)' opacity='0.5'/%3E%3C/svg%3E");
+    opacity: 0.04;
+    mix-blend-mode: overlay;
+    pointer-events: none;
+    z-index: 1;
+  }
+
+  .app {
+    position: relative;
+    z-index: 2;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+  }
+
+  /* ─── HEADER ─── */
+  header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 20px 48px;
+    border-bottom: 1px solid var(--line);
+    flex-shrink: 0;
+  }
+
+  .brand {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    font-family: var(--mono);
+    font-size: 10px;
+    letter-spacing: 0.22em;
+    text-transform: uppercase;
+    color: var(--ink-dim);
+  }
+  .brand .dot {
+    width: 7px; height: 7px;
+    background: var(--accent);
+    border-radius: 50%;
+    box-shadow: 0 0 12px var(--accent);
+    animation: pulse 2.4s ease-in-out infinite;
+  }
+  .brand span b { color: var(--ink); font-weight: 500; }
+
+  @keyframes pulse {
+    0%, 100% { opacity: 1; transform: scale(1); }
+    50% { opacity: 0.5; transform: scale(0.85); }
+  }
+
+  .steps { display: flex; gap: 4px; font-family: var(--mono); font-size: 9px; }
+  .step {
+    display: flex; align-items: center; gap: 8px;
+    padding: 8px 14px;
+    color: var(--ink-dimmer);
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    transition: color 0.4s;
+  }
+  .step.active { color: var(--ink); }
+  .step.done { color: var(--ink-dim); }
+  .step .n {
+    width: 18px; height: 18px;
+    display: grid; place-items: center;
+    border: 1px solid currentColor;
+    font-size: 9px;
+    transition: all 0.4s;
+  }
+  .step.active .n { background: var(--accent); color: var(--bg); border-color: var(--accent); }
+
+  /* ─── MAIN ─── */
+  main {
+    flex: 1;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .screen {
+    position: absolute;
+    inset: 0;
+    padding: 48px 64px 32px;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.7s ease;
+    display: flex;
+    flex-direction: column;
+  }
+  .screen.active {
+    opacity: 1;
+    pointer-events: auto;
+  }
+
+  /* ─── TYPOGRAPHY ─── */
+  .eyebrow {
+    font-family: var(--mono);
+    font-size: 10px;
+    letter-spacing: 0.28em;
+    text-transform: uppercase;
+    color: var(--accent);
+    margin-bottom: 20px;
+    display: inline-flex;
+    align-items: center;
+    gap: 12px;
+  }
+  .eyebrow::before {
+    content: '';
+    width: 24px; height: 1px;
+    background: var(--accent);
+  }
+
+  h1.display {
+    font-family: var(--serif);
+    font-weight: 300;
+    font-size: clamp(48px, 7.5vw, 108px);
+    line-height: 1.08;
+    letter-spacing: -0.025em;
+  }
+  h1.display em {
+    font-style: italic;
+    color: var(--warn);
+    font-weight: 400;
+  }
+
+  h2.title {
+    font-family: var(--serif);
+    font-weight: 300;
+    font-size: clamp(36px, 5vw, 64px);
+    line-height: 1;
+    letter-spacing: -0.02em;
+    margin-bottom: 16px;
+  }
+  h2.title em { font-style: italic; color: var(--warn); }
+
+  .lede {
+    font-family: var(--serif);
+    font-weight: 300;
+    font-size: clamp(17px, 1.6vw, 22px);
+    line-height: 1.45;
+    max-width: 640px;
+    color: var(--ink-dim);
+  }
+
+  /* ─── BUTTONS ─── */
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 14px;
+    padding: 18px 32px;
+    background: var(--accent);
+    color: var(--bg);
+    border: none;
+    font-family: var(--mono);
+    font-size: 11px;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    font-weight: 500;
+    cursor: pointer;
+    transition: transform 0.15s, background 0.2s;
+    -webkit-appearance: none;
+  }
+  .btn:active { transform: scale(0.97); background: var(--warn); }
+  .btn.ghost {
+    background: transparent;
+    color: var(--ink);
+    border: 1px solid var(--line-strong);
+  }
+  .btn.ghost:active { background: var(--bg-2); border-color: var(--accent); }
+  .btn .arrow { font-size: 14px; }
+
+  /* ─── INTRO ─── */
+  #intro { justify-content: space-between; padding-top: 80px; padding-bottom: 60px; }
+
+  .intro-title { max-width: 1100px; }
+  .intro-sub { margin-top: 36px; max-width: 620px; }
+
+  .intro-meta {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-end;
+    gap: 48px;
+    font-family: var(--mono);
+    font-size: 9px;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--ink-dim);
+    border-top: 1px solid var(--line);
+    padding-top: 24px;
+  }
+  .intro-meta .col { display: flex; flex-direction: column; gap: 6px; }
+  .intro-meta .col b { color: var(--ink); font-weight: 500; letter-spacing: 0.12em; }
+  .intro-meta .authors { line-height: 1.9; max-width: 320px; }
+
+  .intro-cta { display: flex; gap: 16px; align-items: center; margin-top: 40px; }
+
+  /* ─── QUIZ ─── */
+  #quiz .quiz-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-end;
+    margin-bottom: 28px;
+  }
+  .quiz-heading h2 { margin-bottom: 0; }
+  .quiz-heading .eyebrow { margin-bottom: 10px; }
+  .quiz-counter {
+    font-family: var(--mono);
+    font-size: 11px;
+    letter-spacing: 0.15em;
+    color: var(--ink-dim);
+    text-align: right;
+  }
+  .quiz-counter .big {
+    display: block;
+    font-family: var(--serif);
+    font-size: 48px;
+    color: var(--ink);
+    line-height: 1;
+    font-weight: 300;
+  }
+  .quiz-counter .big em { color: var(--warn); font-style: italic; }
+
+  .quiz-pair {
+    flex: 1;
+    display: grid;
+    grid-template-columns: 1fr auto 1fr;
+    gap: 32px;
+    align-items: center;
+    margin: 12px 0;
+    max-height: 56vh;
+  }
+  .quiz-divider {
+    font-family: var(--serif);
+    font-style: italic;
+    font-size: 32px;
+    color: var(--ink-dimmer);
+  }
+
+  .quiz-image {
+    position: relative;
+    aspect-ratio: 1;
+    max-height: 100%;
+    margin: 0 auto;
+    width: 100%;
+    max-width: 460px;
+    background: var(--bg-2);
+    border: 1px solid var(--line-strong);
+    cursor: pointer;
+    overflow: hidden;
+    transition: transform 0.25s, border-color 0.25s, box-shadow 0.25s;
+  }
+  .quiz-image:active { transform: scale(0.99); }
+  .quiz-image:hover { border-color: var(--accent); box-shadow: 0 20px 60px -20px rgba(125, 211, 252, 0.3); }
+  .quiz-image img, .quiz-image svg.placeholder {
+    position: absolute; inset: 0;
+    width: 100%; height: 100%;
+    object-fit: cover;
+    display: block;
+  }
+  .quiz-image .tag {
+    position: absolute;
+    top: 16px; left: 16px;
+    font-family: var(--mono);
+    font-size: 10px;
+    letter-spacing: 0.18em;
+    color: var(--ink);
+    background: rgba(10, 14, 26, 0.7);
+    padding: 6px 10px;
+    backdrop-filter: blur(8px);
+  }
+  .quiz-image .verdict {
+    position: absolute;
+    inset: auto 0 0 0;
+    padding: 18px 16px;
+    font-family: var(--mono);
+    font-size: 11px;
+    letter-spacing: 0.2em;
+    background: linear-gradient(to top, rgba(10,14,26,0.95), transparent);
+    opacity: 0;
+    transition: opacity 0.4s;
+  }
+  .quiz-image.revealed .verdict { opacity: 1; }
+  .quiz-image.wm.revealed { border-color: var(--warn); }
+  .quiz-image.wm .verdict { color: var(--warn); }
+  .quiz-image.clean.revealed { border-color: var(--ink-dim); }
+  .quiz-image.clean .verdict { color: var(--ink-dim); }
+
+  .quiz-prompt {
+    text-align: center;
+    font-family: var(--serif);
+    font-style: italic;
+    font-size: clamp(20px, 2.2vw, 30px);
+    font-weight: 300;
+    margin: 20px 0 8px;
+    color: var(--ink);
+  }
+  .quiz-hint {
+    text-align: center;
+    font-family: var(--mono);
+    font-size: 10px;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--ink-dimmer);
+  }
+
+  .quiz-result {
+    display: none;
+    flex: 1;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    text-align: center;
+    gap: 20px;
+  }
+  .quiz-result.show { display: flex; }
+  .quiz-score-big {
+    font-family: var(--serif);
+    font-size: clamp(140px, 22vw, 240px);
+    line-height: 0.9;
+    font-weight: 300;
+    letter-spacing: -0.04em;
+  }
+  .quiz-score-big .slash { color: var(--ink-dimmer); margin: 0 4px; font-style: italic; }
+  .quiz-score-big em { font-style: italic; color: var(--warn); }
+  .quiz-verdict-text {
+    font-family: var(--serif);
+    font-size: clamp(22px, 2.4vw, 30px);
+    font-style: italic;
+    font-weight: 300;
+    max-width: 700px;
+    line-height: 1.4;
+    color: var(--ink);
+  }
+  .quiz-verdict-sub {
+    font-family: var(--mono);
+    font-size: 11px;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--ink-dim);
+    max-width: 560px;
+    line-height: 1.8;
+  }
+
+  /* ─── SCALES ─── */
+  #scales .scales-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-end;
+    gap: 32px;
+    margin-bottom: 24px;
+  }
+  .scales-top .lede { max-width: 520px; font-size: 16px; }
+
+  .scales-grid {
+    flex: 1;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 56px;
+    align-items: center;
+    padding: 0 20px;
+    min-height: 0;
+  }
+  .scales-col { display: flex; flex-direction: column; align-items: center; gap: 18px; }
+  .scales-col-label {
+    font-family: var(--mono);
+    font-size: 10px;
+    letter-spacing: 0.22em;
+    text-transform: uppercase;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .scales-col-label .swatch { width: 10px; height: 10px; }
+  .scales-col.clean .scales-col-label { color: var(--ink-dim); }
+  .scales-col.clean .swatch { background: var(--ink-dim); }
+  .scales-col.wm .scales-col-label { color: var(--warn); }
+  .scales-col.wm .swatch { background: var(--warn); box-shadow: 0 0 10px var(--warn); }
+
+  .scale-frame {
+    position: relative;
+    width: 100%;
+    max-width: 380px;
+    aspect-ratio: 1;
+    background: var(--bg-2);
+    border: 1px solid var(--line-strong);
+    overflow: hidden;
+  }
+  .scales-col.wm .scale-frame { border-color: rgba(251, 191, 36, 0.35); box-shadow: 0 0 0 1px rgba(251, 191, 36, 0.05), 0 20px 60px -30px rgba(251, 191, 36, 0.4); }
+
+  .scale-frame .layer {
+    position: absolute;
+    inset: 0;
+    opacity: 0;
+    transition: opacity 0.45s ease;
+  }
+  .scale-frame .layer.visible { opacity: 1; }
+  .scale-frame .layer img, .scale-frame .layer svg {
+    width: 100%; height: 100%;
+    object-fit: cover;
+    display: block;
+  }
+
+  .scale-badge {
+    position: absolute;
+    bottom: 14px; right: 14px;
+    font-family: var(--mono);
+    font-size: 10px;
+    color: var(--ink);
+    background: rgba(10, 14, 26, 0.82);
+    padding: 5px 10px;
+    letter-spacing: 0.12em;
+    backdrop-filter: blur(6px);
+    z-index: 2;
+  }
+  .scale-resolution {
+    position: absolute;
+    top: 14px; left: 14px;
+    font-family: var(--mono);
+    font-size: 9px;
+    color: var(--ink-dim);
+    background: rgba(10, 14, 26, 0.82);
+    padding: 4px 8px;
+    letter-spacing: 0.1em;
+    z-index: 2;
+  }
+
+  .scales-controls {
+    margin-top: 24px;
+    display: flex;
+    align-items: center;
+    gap: 28px;
+    padding: 0 20px;
+  }
+  .scales-playbtn {
+    width: 56px; height: 56px;
+    border-radius: 50%;
+    background: var(--accent);
+    border: none;
+    cursor: pointer;
+    display: grid;
+    place-items: center;
+    transition: transform 0.15s, background 0.2s;
+    flex-shrink: 0;
+  }
+  .scales-playbtn:active { transform: scale(0.94); }
+  .scales-playbtn svg { width: 18px; height: 18px; fill: var(--bg); }
+  .scales-playbtn.playing { background: var(--warn); }
+
+  .scale-progress-wrap { flex: 1; }
+  .scale-progress {
+    height: 2px;
+    background: var(--line);
+    position: relative;
+  }
+  .scale-progress .bar {
+    position: absolute;
+    left: 0; top: -1px; bottom: -1px;
+    background: var(--accent);
+    width: 0%;
+    transition: width 0.35s ease;
+    box-shadow: 0 0 12px var(--accent);
+  }
+  .scale-ticks {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 10px;
+    font-family: var(--mono);
+    font-size: 9px;
+    color: var(--ink-dimmer);
+    letter-spacing: 0.1em;
+  }
+  .scale-tick-active { color: var(--accent); }
+  .scale-labels {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 4px;
+    font-family: var(--mono);
+    font-size: 9px;
+    color: var(--ink-dimmer);
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+  }
+
+  /* ─── IMPACT ─── */
+  #impact .impact-top { margin-bottom: 36px; }
+  .impact-grid {
+    flex: 1;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 40px;
+    margin-top: 10px;
+    min-height: 0;
+    align-items: stretch;
+  }
+  .impact-card {
+    border: 1px solid var(--line);
+    padding: 44px 46px;
+    background:
+      linear-gradient(155deg, rgba(251, 191, 36, 0.04) 0%, rgba(255,255,255,0.015) 35%, rgba(255,255,255,0) 100%);
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    position: relative;
+    overflow: hidden;
+    transition: transform 0.4s, border-color 0.4s;
+  }
+  .impact-card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0;
+    width: 72px; height: 1px;
+    background: var(--warn);
+    box-shadow: 0 0 16px rgba(251, 191, 36, 0.5);
+  }
+  .impact-card::after {
+    content: '';
+    position: absolute;
+    top: -40%; right: -40%;
+    width: 80%; height: 80%;
+    background: radial-gradient(circle, rgba(251, 191, 36, 0.06), transparent 70%);
+    pointer-events: none;
+  }
+  .impact-card:hover { transform: translateY(-3px); border-color: rgba(251, 191, 36, 0.3); }
+
+  .impact-card .card-head {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 24px;
+    padding-bottom: 20px;
+    border-bottom: 1px solid var(--line);
+  }
+  .impact-card .num {
+    font-family: var(--serif);
+    font-size: 92px;
+    line-height: 0.85;
+    color: var(--warn);
+    font-weight: 300;
+    font-style: italic;
+    letter-spacing: -0.03em;
+  }
+  .impact-card .card-tag {
+    font-family: var(--mono);
+    font-size: 9px;
+    letter-spacing: 0.22em;
+    text-transform: uppercase;
+    color: var(--ink-dim);
+    text-align: right;
+    line-height: 1.8;
+    padding-top: 8px;
+  }
+  .impact-card .card-tag b { display: block; color: var(--warn); font-weight: 500; }
+
+  .impact-card h3 {
+    font-family: var(--serif);
+    font-size: clamp(26px, 2.6vw, 36px);
+    font-weight: 300;
+    line-height: 1.1;
+    letter-spacing: -0.015em;
+    color: var(--ink);
+    margin-top: 4px;
+  }
+  .impact-card h3 em { font-style: italic; color: var(--warn); }
+  .impact-card p {
+    font-family: var(--serif);
+    font-size: clamp(15px, 1.35vw, 18px);
+    line-height: 1.6;
+    color: var(--ink-dim);
+    font-weight: 300;
+  }
+  .impact-card .pull {
+    margin-top: auto;
+    padding-top: 20px;
+    border-top: 1px solid var(--line);
+    font-family: var(--mono);
+    font-size: 10px;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--ink-dim);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .impact-card .pull::before {
+    content: '';
+    width: 24px; height: 1px;
+    background: var(--warn);
+  }
+
+  /* ─── RADIOACTIVE ─── */
+  #radioactive .radio-top { margin-bottom: 20px; }
+  .radio-stage {
+    flex: 1;
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 0;
+  }
+  .radio-svg { width: 100%; height: 100%; max-height: 100%; }
+
+  .radio-caption {
+    margin-top: 8px;
+    text-align: center;
+    font-family: var(--serif);
+    font-style: italic;
+    font-size: clamp(18px, 2vw, 24px);
+    font-weight: 300;
+    color: var(--ink);
+    min-height: 1.4em;
+  }
+  .radio-caption b { color: var(--warn); font-style: normal; font-weight: 400; font-family: var(--mono); font-size: 0.72em; letter-spacing: 0.12em; text-transform: uppercase; padding: 0 6px; }
+
+  /* ─── FOOTER ─── */
+  footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 20px 48px;
+    border-top: 1px solid var(--line);
+    flex-shrink: 0;
+    gap: 24px;
+  }
+  .nav-left, .nav-right { display: flex; gap: 10px; align-items: center; }
+  .nav-label {
+    font-family: var(--mono);
+    font-size: 10px;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--ink-dim);
+  }
+
+  .nav-btn {
+    width: 48px; height: 48px;
+    border: 1px solid var(--line-strong);
+    background: transparent;
+    color: var(--ink);
+    cursor: pointer;
+    display: grid;
+    place-items: center;
+    transition: all 0.2s;
+    font-family: var(--serif);
+    font-size: 20px;
+  }
+  .nav-btn:active { transform: scale(0.95); }
+  .nav-btn:not(:disabled):hover { border-color: var(--accent); color: var(--accent); }
+  .nav-btn:disabled { opacity: 0.3; cursor: not-allowed; }
+
+  /* ─── STAGGER ANIMS ─── */
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(24px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  .screen.active .anim > * {
+    opacity: 0;
+    animation: fadeUp 0.9s cubic-bezier(0.2, 0.7, 0.2, 1) both;
+  }
+  .screen.active .anim > *:nth-child(1) { animation-delay: 0.05s; }
+  .screen.active .anim > *:nth-child(2) { animation-delay: 0.18s; }
+  .screen.active .anim > *:nth-child(3) { animation-delay: 0.32s; }
+  .screen.active .anim > *:nth-child(4) { animation-delay: 0.46s; }
+  .screen.active .anim > *:nth-child(5) { animation-delay: 0.6s; }
+
+  /* decorative corner marks */
+  .corner {
+    position: absolute;
+    font-family: var(--mono);
+    font-size: 8px;
+    letter-spacing: 0.2em;
+    color: var(--ink-dimmer);
+    pointer-events: none;
+  }
+  .corner.tr { top: 16px; right: 48px; }
+  .corner.bl { bottom: 16px; left: 48px; }
+</style>
+</head>
+<body>
+
+<div class="app">
+  <!-- HEADER -->
+  <header>
+    <div class="brand">
+      <span class="dot"></span>
+      <span>CISPA Helmholtz · <b>BitMark</b> Demonstration</span>
+    </div>
+    <div class="steps" id="steps">
+      <div class="step" data-idx="0"><span class="n">0</span>Intro</div>
+      <div class="step" data-idx="1"><span class="n">1</span>Spot the Watermark</div>
+      <div class="step" data-idx="2"><span class="n">2</span>Scales</div>
+      <div class="step" data-idx="3"><span class="n">3</span>Impact</div>
+      <div class="step" data-idx="4"><span class="n">4</span>Radioactivity</div>
+    </div>
+  </header>
+
+  <!-- MAIN -->
+  <main>
+
+    <!-- ── SCREEN 0: INTRO ── -->
+    <section class="screen" id="intro">
+      <div class="corner tr">№ 00 / 04</div>
+      <div class="anim">
+        <div class="eyebrow">A Research Demonstration · Est. 5 minutes</div>
+        <h1 class="display intro-title">
+          Making AI generation<br>
+          <em>accountable.</em>
+        </h1>
+        <p class="lede intro-sub">
+          Generative image models now create content indistinguishable from reality.
+          <em style="font-style:italic;color:var(--ink)">BitMark</em> embeds a secret signature into every image they produce —
+          imperceptible to the human eye, yet unmistakable to a detector.
+        </p>
+        <div class="intro-cta">
+          <button class="btn" onclick="goto(1)">Begin demonstration <span class="arrow">→</span></button>
+        </div>
+      </div>
+      <div class="intro-meta">
+        <div class="col">
+          <span>Authors</span>
+          <b class="authors">Louis Kerner · Michel Meintz · Bihe Zhao · Franziska Boenisch · Adam Dziedzic</b>
+        </div>
+        <div class="col">
+          <span>Institution</span>
+          <b>CISPA Helmholtz Center<br>for Information Security</b>
+        </div>
+        <div class="col">
+          <span>Paper</span>
+          <b>BitMark — Watermarking<br>Bitwise Autoregressive Models</b>
+        </div>
+      </div>
+    </section>
+
+    <!-- ── SCREEN 1: QUIZ ── -->
+    <section class="screen" id="quiz">
+      <div class="corner tr">№ 01 / 04 · INTERACTIVE</div>
+
+      <div class="quiz-top anim">
+        <div class="quiz-heading">
+          <div class="eyebrow">Interactive · Spot the watermark</div>
+          <h2 class="title">Can you see <em>it?</em></h2>
+        </div>
+        <div class="quiz-counter">
+          <span>Question</span>
+          <span class="big"><span id="qNum">1</span><span class="slash"> / </span>5</span>
+        </div>
+      </div>
+
+      <div class="quiz-pair anim" id="quizPair">
+        <div class="quiz-image" id="imgLeft" onclick="answerQuiz('left')">
+          <div class="tag">OPTION A</div>
+          <div class="placeholder-slot"></div>
+          <div class="verdict"></div>
+        </div>
+        <div class="quiz-divider">vs.</div>
+        <div class="quiz-image" id="imgRight" onclick="answerQuiz('right')">
+          <div class="tag">OPTION B</div>
+          <div class="placeholder-slot"></div>
+          <div class="verdict"></div>
+        </div>
+      </div>
+
+      <div class="anim">
+        <p class="quiz-prompt">Which image carries our watermark?</p>
+        <p class="quiz-hint" id="quizHint">Tap an image to choose</p>
+      </div>
+
+      <!-- RESULT -->
+      <div class="quiz-result" id="quizResult">
+        <div class="eyebrow">Your verdict</div>
+        <div class="quiz-score-big"><span id="scoreN">0</span><span class="slash">/</span><em>5</em></div>
+        <div class="quiz-verdict-text" id="verdictText">Even an expert eye struggles to see BitMark.</div>
+        <div class="quiz-verdict-sub" id="verdictSub">The watermark modifies bits in the token stream so subtly that the resulting image is visually indistinguishable — yet our detector recovers it with near-perfect accuracy.</div>
+        <button class="btn" onclick="goto(2)" style="margin-top: 18px;">Continue <span class="arrow">→</span></button>
+      </div>
+    </section>
+
+    <!-- ── SCREEN 2: SCALES ── -->
+    <section class="screen" id="scales">
+      <div class="corner tr">№ 02 / 04 · ANIMATION</div>
+
+      <div class="scales-top anim">
+        <div>
+          <div class="eyebrow">Scale-wise generation</div>
+          <h2 class="title">Bit by bit, <em>scale by scale</em>.</h2>
+        </div>
+        <p class="lede">
+          Infinity, a state-of-the-art bitwise autoregressive model, builds an image across 13 progressive scales —
+          from a 1×1 token to the final 64×64 grid. BitMark intervenes at the bit level, <em>without</em> slowing this process down.
+        </p>
+      </div>
+
+      <div class="scales-grid anim">
+        <div class="scales-col clean">
+          <div class="scales-col-label"><span class="swatch"></span>Original · Unwatermarked</div>
+          <div class="scale-frame" id="cleanFrame">
+            <div class="scale-resolution" id="cleanRes">1 × 1</div>
+            <div class="scale-badge" id="cleanBadge">Scale 01 / 13</div>
+            <!-- layers injected by JS -->
+          </div>
+        </div>
+        <div class="scales-col wm">
+          <div class="scales-col-label"><span class="swatch"></span>BitMark · Watermarked</div>
+          <div class="scale-frame" id="wmFrame">
+            <div class="scale-resolution" id="wmRes">1 × 1</div>
+            <div class="scale-badge" id="wmBadge">Scale 01 / 13</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="scales-controls anim">
+        <button class="scales-playbtn" id="playBtn" onclick="toggleScales()">
+          <svg viewBox="0 0 24 24" id="playIcon"><path d="M8 5v14l11-7z"/></svg>
+        </button>
+        <div class="scale-progress-wrap">
+          <div class="scale-progress"><div class="bar" id="scaleBar"></div></div>
+          <div class="scale-ticks" id="scaleTicks"></div>
+          <div class="scale-labels">
+            <span>Coarse</span>
+            <span>→</span>
+            <span>Fine</span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ── SCREEN 3: IMPACT ── -->
+    <section class="screen" id="impact">
+      <div class="corner tr">№ 03 / 04 · WHY IT MATTERS</div>
+
+      <div class="impact-top anim">
+        <div class="eyebrow">Societal impact</div>
+        <h2 class="title">Trust for the <em>synthetic age</em>.</h2>
+        <p class="lede" style="margin-top: 12px;">
+          Every month, billions of AI-generated images flood the internet. Without accountability,
+          we lose the ability to tell real from synthetic — and models eventually collapse, training on their own outputs.
+        </p>
+      </div>
+
+      <div class="impact-grid anim">
+        <div class="impact-card">
+          <div class="card-head">
+            <div class="num">01</div>
+            <div class="card-tag">Pillar One<b>Provenance</b></div>
+          </div>
+          <h3>Responsible disclosure of <em>AI-generated</em> content.</h3>
+          <p>Model providers can transparently mark every image their systems produce. Journalists, platforms, and regulators gain a verifiable signal of synthetic origin — without compromising creative use.</p>
+          <div class="pull">Invisible to users · Unmistakable to detectors</div>
+        </div>
+        <div class="impact-card">
+          <div class="card-head">
+            <div class="num">02</div>
+            <div class="card-tag">Pillar Two<b>Integrity</b></div>
+          </div>
+          <h3>Countering <em>misinformation</em> and deepfakes.</h3>
+          <p>From fabricated evidence to political impersonation, undetected synthetic media erodes public trust. A reliable, imperceptible signature is the foundation for content provenance at internet scale.</p>
+          <div class="pull">Robust to cropping, compression, filtering</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ── SCREEN 4: RADIOACTIVE ── -->
+    <section class="screen" id="radioactive">
+      <div class="corner tr">№ 04 / 04 · THE TWIST</div>
+
+      <div class="radio-top anim">
+        <div class="eyebrow">Radioactivity</div>
+        <h2 class="title">The watermark <em>spreads.</em></h2>
+        <p class="lede" style="margin-top: 12px;">
+          Train any new model on BitMark-watermarked images — even just fine-tune it — and the <em>new</em> model inherits the signature.
+          Like a fingerprint passed down through generations.
+        </p>
+      </div>
+
+      <div class="radio-stage anim">
+        <svg class="radio-svg" id="radioSvg" viewBox="0 0 1200 480" preserveAspectRatio="xMidYMid meet"></svg>
+      </div>
+
+      <p class="radio-caption anim" id="radioCaption">Watch: one watermarked dataset infects every downstream model it touches.</p>
+    </section>
+
+  </main>
+
+  <!-- FOOTER -->
+  <footer>
+    <div class="nav-left">
+      <button class="nav-btn" id="prevBtn" onclick="prev()">←</button>
+      <span class="nav-label" id="sectionLabel">Introduction</span>
+    </div>
+    <div class="nav-right">
+      <span class="nav-label">Tap to continue</span>
+      <button class="nav-btn" id="nextBtn" onclick="next()">→</button>
+    </div>
+  </footer>
+</div>
+
+<script>
+// ═══════════════════════════════════════════════════════════
+// PLACEHOLDER GENERATORS
+// ═══════════════════════════════════════════════════════════
+
+// Generate an SVG placeholder image that resembles AI-generated art.
+// These are used until real images are dropped into /images/...
+function makeQuizPlaceholder(seed, label) {
+  // distinct color palettes per seed
+  const palettes = [
+    ['#1e3a5f', '#7dd3fc', '#fbbf24', '#fef3c7'],  // dawn sky
+    ['#3f1d38', '#c084fc', '#f472b6', '#fecaca'],  // sunset
+    ['#1c4532', '#4ade80', '#fde68a', '#d1fae5'],  // forest
+    ['#422006', '#f59e0b', '#ef4444', '#fed7aa'],  // desert
+    ['#1e1b4b', '#6366f1', '#a5b4fc', '#e0e7ff'],  // deep ocean
+  ];
+  const p = palettes[seed % palettes.length];
+  return `
+  <svg class="placeholder" viewBox="0 0 400 400" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="xMidYMid slice">
+    <defs>
+      <radialGradient id="rg${seed}" cx="30%" cy="25%" r="80%">
+        <stop offset="0%" stop-color="${p[3]}" stop-opacity="0.9"/>
+        <stop offset="35%" stop-color="${p[2]}" stop-opacity="0.7"/>
+        <stop offset="70%" stop-color="${p[1]}" stop-opacity="0.5"/>
+        <stop offset="100%" stop-color="${p[0]}"/>
+      </radialGradient>
+      <filter id="blur${seed}"><feGaussianBlur stdDeviation="18"/></filter>
+      <filter id="noise${seed}">
+        <feTurbulence type="fractalNoise" baseFrequency="0.9" numOctaves="2"/>
+        <feColorMatrix values="0 0 0 0 0.9  0 0 0 0 0.9  0 0 0 0 0.9  0 0 0 0.08 0"/>
+        <feComposite in2="SourceGraphic" operator="in"/>
+      </filter>
+    </defs>
+    <rect width="400" height="400" fill="${p[0]}"/>
+    <rect width="400" height="400" fill="url(#rg${seed})"/>
+    <g filter="url(#blur${seed})" opacity="0.6">
+      <circle cx="${120 + seed*17%80}" cy="${180 + seed*23%60}" r="80" fill="${p[2]}"/>
+      <circle cx="${280 - seed*11%60}" cy="${260 + seed*7%40}" r="70" fill="${p[1]}"/>
+      <ellipse cx="200" cy="${100 + seed*5%50}" rx="120" ry="40" fill="${p[3]}" opacity="0.5"/>
+    </g>
+    <rect width="400" height="400" filter="url(#noise${seed})"/>
+    <rect x="0" y="0" width="400" height="400" fill="none"/>
+  </svg>`;
+}
+
+// Scale-wise placeholder: blur increases as scale decreases
+function makeScalePlaceholder(scale, isWatermarked) {
+  const totalScales = 13;
+  const progress = scale / totalScales; // 0..1
+  const blur = Math.max(0, 30 * (1 - progress) + 1);
+  const pixelSize = Math.max(1, Math.round(64 * (1 - progress * 0.95)));
+  const p = isWatermarked
+    ? ['#1a1608', '#7c5a1a', '#fbbf24', '#fef3c7']
+    : ['#0a1828', '#1e3a5f', '#7dd3fc', '#e0f2fe'];
+  const wmTint = isWatermarked
+    ? `<rect width="400" height="400" fill="#fbbf24" opacity="${0.04 + progress*0.02}"/>`
+    : '';
+  return `
+  <svg viewBox="0 0 400 400" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="xMidYMid slice">
+    <defs>
+      <radialGradient id="sg${scale}${isWatermarked?'w':'c'}" cx="40%" cy="35%" r="75%">
+        <stop offset="0%" stop-color="${p[3]}"/>
+        <stop offset="30%" stop-color="${p[2]}"/>
+        <stop offset="75%" stop-color="${p[1]}"/>
+        <stop offset="100%" stop-color="${p[0]}"/>
+      </radialGradient>
+      <filter id="sb${scale}${isWatermarked?'w':'c'}"><feGaussianBlur stdDeviation="${blur}"/></filter>
+    </defs>
+    <rect width="400" height="400" fill="${p[0]}"/>
+    <g filter="url(#sb${scale}${isWatermarked?'w':'c'})">
+      <rect width="400" height="400" fill="url(#sg${scale}${isWatermarked?'w':'c'})"/>
+      <circle cx="140" cy="180" r="${60 + progress*20}" fill="${p[2]}" opacity="0.75"/>
+      <circle cx="260" cy="240" r="${70 + progress*15}" fill="${p[1]}" opacity="0.8"/>
+      <ellipse cx="200" cy="120" rx="${100 + progress*30}" ry="${30 + progress*10}" fill="${p[3]}" opacity="0.55"/>
+      <circle cx="300" cy="120" r="${25 + progress*10}" fill="${p[3]}" opacity="0.7"/>
+    </g>
+    ${wmTint}
+  </svg>`;
+}
+
+// Try to load a real image, fall back to placeholder
+function loadImageWithFallback(container, realPath, fallbackSVG) {
+  const img = new Image();
+  img.onload = () => {
+    container.innerHTML = '';
+    container.appendChild(img);
+  };
+  img.onerror = () => {
+    container.innerHTML = fallbackSVG;
+  };
+  // Start with fallback immediately (no flash)
+  container.innerHTML = fallbackSVG;
+  img.src = realPath;
+}
+
+// ═══════════════════════════════════════════════════════════
+// NAVIGATION
+// ═══════════════════════════════════════════════════════════
+const SCREENS = ['intro', 'quiz', 'scales', 'impact', 'radioactive'];
+const LABELS = ['Introduction', 'Spot the Watermark', 'Scale-wise Generation', 'Societal Impact', 'Radioactivity'];
+let current = 0;
+
+function goto(idx) {
+  if (idx < 0 || idx >= SCREENS.length) return;
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById(SCREENS[idx]).classList.add('active');
+  current = idx;
+  // update steps
+  document.querySelectorAll('.step').forEach((s, i) => {
+    s.classList.toggle('active', i === idx);
+    s.classList.toggle('done', i < idx);
+  });
+  document.getElementById('sectionLabel').textContent = LABELS[idx];
+  document.getElementById('prevBtn').disabled = idx === 0;
+  document.getElementById('nextBtn').disabled = idx === SCREENS.length - 1;
+
+  // screen-specific lifecycle
+  if (idx === 1) resetQuiz();
+  if (idx === 2) resetScales();
+  if (idx === 4) startRadio();
+  else stopRadio();
+}
+function next() { goto(current + 1); }
+function prev() { goto(current - 1); }
+
+// clickable step headers
+document.querySelectorAll('.step').forEach(s => {
+  s.addEventListener('click', () => goto(+s.dataset.idx));
+});
+
+// keyboard
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'ArrowRight') next();
+  if (e.key === 'ArrowLeft') prev();
+});
+
+// ═══════════════════════════════════════════════════════════
+// QUIZ
+// ═══════════════════════════════════════════════════════════
+// Real image paths expected at:
+//   images/quiz/1_wm.jpg, images/quiz/1_clean.jpg ... up to 5
+// Fallback: generated SVG placeholders
+const QUIZ_QUESTIONS = [
+  { id: 1 }, { id: 2 }, { id: 3 }, { id: 4 }, { id: 5 }
+].map(q => ({
+  ...q,
+  // randomly place watermarked on left or right
+  wmSide: Math.random() < 0.5 ? 'left' : 'right'
+}));
+let quizIdx = 0;
+let quizScore = 0;
+let quizLock = false;
+
+function resetQuiz() {
+  quizIdx = 0;
+  quizScore = 0;
+  quizLock = false;
+  document.getElementById('quizResult').classList.remove('show');
+  document.getElementById('quizPair').style.display = '';
+  document.querySelector('#quiz .quiz-top').style.display = '';
+  document.querySelectorAll('#quiz .quiz-prompt, #quiz .quiz-hint').forEach(e => e.parentElement.style.display = '');
+  loadQuizQuestion();
+}
+
+function loadQuizQuestion() {
+  const q = QUIZ_QUESTIONS[quizIdx];
+  document.getElementById('qNum').textContent = quizIdx + 1;
+  document.getElementById('quizHint').textContent = 'Tap an image to choose';
+
+  const left = document.getElementById('imgLeft');
+  const right = document.getElementById('imgRight');
+  [left, right].forEach(el => {
+    el.classList.remove('revealed', 'wm', 'clean');
+    el.querySelector('.verdict').textContent = '';
+  });
+
+  // Generate placeholders (use the SAME seed for both sides of a pair, since
+  // watermarked/clean should look identical to the eye)
+  const leftSlot = left.querySelector('.placeholder-slot');
+  const rightSlot = right.querySelector('.placeholder-slot');
+  const placeholder = makeQuizPlaceholder(q.id, `Pair ${q.id}`);
+
+  // Real paths the user can drop in later
+  const wmPath = `images/quiz/${q.id}_wm.jpg`;
+  const cleanPath = `images/quiz/${q.id}_clean.jpg`;
+  const leftPath = q.wmSide === 'left' ? wmPath : cleanPath;
+  const rightPath = q.wmSide === 'left' ? cleanPath : wmPath;
+
+  loadImageWithFallback(leftSlot, leftPath, placeholder);
+  loadImageWithFallback(rightSlot, rightPath, placeholder);
+
+  quizLock = false;
+}
+
+function answerQuiz(side) {
+  if (quizLock) return;
+  quizLock = true;
+  const q = QUIZ_QUESTIONS[quizIdx];
+  const correct = side === q.wmSide;
+  if (correct) quizScore++;
+
+  // reveal
+  const left = document.getElementById('imgLeft');
+  const right = document.getElementById('imgRight');
+  const wmEl = q.wmSide === 'left' ? left : right;
+  const cleanEl = q.wmSide === 'left' ? right : left;
+  wmEl.classList.add('wm', 'revealed');
+  cleanEl.classList.add('clean', 'revealed');
+  wmEl.querySelector('.verdict').textContent = '● WATERMARKED';
+  cleanEl.querySelector('.verdict').textContent = '○ CLEAN';
+
+  document.getElementById('quizHint').textContent = correct
+    ? '✓ Correct — moving on'
+    : '✗ Not quite — moving on';
+
+  setTimeout(() => {
+    quizIdx++;
+    if (quizIdx >= QUIZ_QUESTIONS.length) {
+      showQuizResult();
+    } else {
+      loadQuizQuestion();
+    }
+  }, 1600);
+}
+
+function showQuizResult() {
+  document.getElementById('quizPair').style.display = 'none';
+  document.querySelectorAll('#quiz .quiz-prompt, #quiz .quiz-hint').forEach(e => e.parentElement.style.display = 'none');
+  document.querySelector('#quiz .quiz-top').style.display = 'none';
+
+  document.getElementById('scoreN').textContent = quizScore;
+  let verdict, sub;
+  if (quizScore <= 2) {
+    verdict = 'Practically invisible.';
+    sub = 'You scored at or near chance level — which is exactly what we want. BitMark modifies individual bits in the token stream so subtly that the image remains visually pristine, while our detector still recovers the mark with near-perfect accuracy.';
+  } else if (quizScore === 3) {
+    verdict = 'Right at chance — the watermark held up.';
+    sub = 'Three out of five is what random guessing would produce. BitMark achieves this by operating at the bit level of the token stream, preserving visual fidelity while remaining detectable to our algorithm.';
+  } else {
+    verdict = 'Sharp eye — but luck, mostly.';
+    sub = 'Even trained reviewers cluster around chance. BitMark modifies individual bits in the token stream so subtly that the image remains visually pristine, while our detector still recovers the mark with near-perfect accuracy.';
+  }
+  document.getElementById('verdictText').textContent = verdict;
+  document.getElementById('verdictSub').textContent = sub;
+  document.getElementById('quizResult').classList.add('show');
+}
+
+// ═══════════════════════════════════════════════════════════
+// SCALES
+// ═══════════════════════════════════════════════════════════
+const SCALE_COUNT = 13;
+// Infinity's actual scale sequence (approximate, for display)
+const SCALE_RESOLUTIONS = ['1×1','2×2','3×3','4×4','6×6','8×8','12×12','16×16','20×20','24×24','32×32','48×48','64×64'];
+let scaleIdx = 0;
+let scaleTimer = null;
+let scalePlaying = false;
+
+function initScales() {
+  // inject layer elements
+  const cleanFrame = document.getElementById('cleanFrame');
+  const wmFrame = document.getElementById('wmFrame');
+  for (let i = 0; i < SCALE_COUNT; i++) {
+    const c = document.createElement('div'); c.className = 'layer'; c.dataset.i = i;
+    const w = document.createElement('div'); w.className = 'layer'; w.dataset.i = i;
+    // Generate placeholder
+    c.innerHTML = makeScalePlaceholder(i + 1, false);
+    w.innerHTML = makeScalePlaceholder(i + 1, true);
+    cleanFrame.insertBefore(c, cleanFrame.firstChild);
+    wmFrame.insertBefore(w, wmFrame.firstChild);
+    // Try loading real images
+    const realClean = new Image();
+    realClean.onload = () => {
+      c.innerHTML = ''; c.appendChild(realClean);
+    };
+    realClean.src = `images/scales/clean/${String(i+1).padStart(2,'0')}.jpg`;
+    const realWm = new Image();
+    realWm.onload = () => {
+      w.innerHTML = ''; w.appendChild(realWm);
+    };
+    realWm.src = `images/scales/wm/${String(i+1).padStart(2,'0')}.jpg`;
+  }
+
+  // ticks
+  const ticks = document.getElementById('scaleTicks');
+  ticks.innerHTML = '';
+  for (let i = 0; i < SCALE_COUNT; i++) {
+    const t = document.createElement('span');
+    t.textContent = String(i+1).padStart(2,'0');
+    ticks.appendChild(t);
+  }
+}
+
+function showScale(i) {
+  scaleIdx = i;
+  const cleanFrame = document.getElementById('cleanFrame');
+  const wmFrame = document.getElementById('wmFrame');
+  cleanFrame.querySelectorAll('.layer').forEach(l => {
+    l.classList.toggle('visible', +l.dataset.i === i);
+  });
+  wmFrame.querySelectorAll('.layer').forEach(l => {
+    l.classList.toggle('visible', +l.dataset.i === i);
+  });
+  document.getElementById('cleanRes').textContent = SCALE_RESOLUTIONS[i];
+  document.getElementById('wmRes').textContent = SCALE_RESOLUTIONS[i];
+  document.getElementById('cleanBadge').textContent = `Scale ${String(i+1).padStart(2,'0')} / 13`;
+  document.getElementById('wmBadge').textContent = `Scale ${String(i+1).padStart(2,'0')} / 13`;
+  document.getElementById('scaleBar').style.width = `${((i+1)/SCALE_COUNT)*100}%`;
+  document.querySelectorAll('#scaleTicks span').forEach((t, j) => {
+    t.classList.toggle('scale-tick-active', j === i);
+  });
+}
+
+function toggleScales() {
+  if (scalePlaying) {
+    stopScales();
+  } else {
+    playScales();
+  }
+}
+
+function playScales() {
+  scalePlaying = true;
+  document.getElementById('playBtn').classList.add('playing');
+  document.getElementById('playIcon').innerHTML = '<rect x="6" y="5" width="4" height="14"/><rect x="14" y="5" width="4" height="14"/>';
+  if (scaleIdx >= SCALE_COUNT - 1) scaleIdx = -1;
+  scaleTimer = setInterval(() => {
+    scaleIdx++;
+    if (scaleIdx >= SCALE_COUNT) {
+      showScale(SCALE_COUNT - 1);
+      stopScales();
+      return;
+    }
+    showScale(scaleIdx);
+  }, 520);
+  showScale(Math.max(0, scaleIdx + 1));
+}
+
+function stopScales() {
+  scalePlaying = false;
+  if (scaleTimer) clearInterval(scaleTimer);
+  scaleTimer = null;
+  document.getElementById('playBtn').classList.remove('playing');
+  document.getElementById('playIcon').innerHTML = '<path d="M8 5v14l11-7z"/>';
+}
+
+function resetScales() {
+  stopScales();
+  scaleIdx = 0;
+  showScale(0);
+  // auto-start after a brief pause
+  setTimeout(() => {
+    if (current === 2) playScales();
+  }, 800);
+}
+
+// ═══════════════════════════════════════════════════════════
+// RADIOACTIVITY
+// ═══════════════════════════════════════════════════════════
+let radioFrame = null;
+let radioStep = 0;
+let radioT = 0;
+
+const RADIO_CAPTIONS = [
+  'Model A — trained by us — generates images with BitMark.',
+  'Those images spread across the web, posted, scraped, shared.',
+  'Someone trains Model B on the scraped data — <b>unknowingly</b>.',
+  'Model B\'s outputs still carry the watermark. <b>Radioactive</b>.',
+];
+
+function buildRadioSVG() {
+  const svg = document.getElementById('radioSvg');
+  svg.innerHTML = `
+    <defs>
+      <radialGradient id="modelGrad" cx="50%" cy="50%" r="50%">
+        <stop offset="0%" stop-color="#7dd3fc" stop-opacity="0.4"/>
+        <stop offset="100%" stop-color="#7dd3fc" stop-opacity="0"/>
+      </radialGradient>
+      <radialGradient id="modelGrad2" cx="50%" cy="50%" r="50%">
+        <stop offset="0%" stop-color="#fbbf24" stop-opacity="0.5"/>
+        <stop offset="100%" stop-color="#fbbf24" stop-opacity="0"/>
+      </radialGradient>
+      <filter id="glow"><feGaussianBlur stdDeviation="4"/></filter>
+    </defs>
+
+    <!-- Model A -->
+    <g id="modelA" transform="translate(180, 240)">
+      <circle r="80" fill="url(#modelGrad)"/>
+      <circle r="48" fill="none" stroke="#7dd3fc" stroke-width="1.5"/>
+      <circle r="36" fill="#0a0e1a" stroke="#7dd3fc" stroke-width="1"/>
+      <text y="4" text-anchor="middle" font-family="IBM Plex Mono" font-size="14" fill="#7dd3fc" font-weight="500">Model A</text>
+      <text y="22" text-anchor="middle" font-family="IBM Plex Mono" font-size="8" fill="#94a3b8" letter-spacing="1">BITMARK</text>
+      <text y="-60" text-anchor="middle" font-family="Fraunces" font-style="italic" font-size="13" fill="#f5f1e8">Our model</text>
+    </g>
+
+    <!-- Model B -->
+    <g id="modelB" transform="translate(1020, 240)" opacity="0.3">
+      <circle r="80" fill="url(#modelGrad)" id="modelBGlow"/>
+      <circle r="48" fill="none" stroke="#7dd3fc" stroke-width="1.5" id="modelBRing"/>
+      <circle r="36" fill="#0a0e1a" stroke="#7dd3fc" stroke-width="1" id="modelBCore"/>
+      <text y="4" text-anchor="middle" font-family="IBM Plex Mono" font-size="14" fill="#7dd3fc" font-weight="500" id="modelBText">Model B</text>
+      <text y="22" text-anchor="middle" font-family="IBM Plex Mono" font-size="8" fill="#94a3b8" letter-spacing="1" id="modelBLabel">DERIVATIVE</text>
+      <text y="-60" text-anchor="middle" font-family="Fraunces" font-style="italic" font-size="13" fill="#f5f1e8">Someone else\'s model</text>
+    </g>
+
+    <!-- Middle: images -->
+    <g id="imageCloud" transform="translate(600, 240)">
+      <text y="-130" text-anchor="middle" font-family="IBM Plex Mono" font-size="9" fill="#94a3b8" letter-spacing="2">GENERATED IMAGES</text>
+      <g id="imgs"></g>
+    </g>
+
+    <!-- Arrows -->
+    <g id="arrow1" opacity="0">
+      <path d="M 260 240 Q 420 200 560 240" stroke="#7dd3fc" stroke-width="1.5" fill="none" stroke-dasharray="4 6"/>
+      <text x="420" y="195" text-anchor="middle" font-family="IBM Plex Mono" font-size="9" fill="#7dd3fc" letter-spacing="1">GENERATES</text>
+    </g>
+    <g id="arrow2" opacity="0">
+      <path d="M 640 240 Q 820 280 940 240" stroke="#fbbf24" stroke-width="1.5" fill="none" stroke-dasharray="4 6"/>
+      <text x="790" y="295" text-anchor="middle" font-family="IBM Plex Mono" font-size="9" fill="#fbbf24" letter-spacing="1">TRAINS / FINE-TUNES</text>
+    </g>
+
+    <!-- Particle layer -->
+    <g id="particles"></g>
+  `;
+
+  // Generate small image tiles
+  const imgs = svg.querySelector('#imgs');
+  const positions = [
+    { x: -60, y: -40 }, { x: 0, y: -55 }, { x: 60, y: -40 },
+    { x: -70, y: 20 }, { x: 0, y: 10 }, { x: 70, y: 20 },
+    { x: -40, y: 70 }, { x: 40, y: 70 }
+  ];
+  positions.forEach((p, i) => {
+    const g = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+    g.setAttribute('transform', `translate(${p.x}, ${p.y})`);
+    g.setAttribute('opacity', '0');
+    g.classList.add('rimg');
+    g.dataset.i = i;
+    const hue = [195, 45, 340, 120, 20, 280, 200, 50][i];
+    g.innerHTML = `
+      <rect x="-22" y="-22" width="44" height="44" rx="2" fill="hsl(${hue}, 40%, 25%)" stroke="#94a3b8" stroke-width="0.5"/>
+      <circle cx="-6" cy="-4" r="6" fill="hsl(${hue}, 60%, 60%)" opacity="0.8"/>
+      <circle cx="8" cy="6" r="8" fill="hsl(${hue+20}, 50%, 50%)" opacity="0.7"/>
+      <rect class="wmdot" x="14" y="14" width="3" height="3" fill="#fbbf24" opacity="0"/>
+    `;
+    imgs.appendChild(g);
+  });
+}
+
+function startRadio() {
+  buildRadioSVG();
+  radioStep = 0;
+  radioT = 0;
+  stepRadio();
+  radioFrame = setInterval(stepRadio, 2800);
+}
+
+function stopRadio() {
+  if (radioFrame) clearInterval(radioFrame);
+  radioFrame = null;
+}
+
+function stepRadio() {
+  const svg = document.getElementById('radioSvg');
+  if (!svg) return;
+  const caption = document.getElementById('radioCaption');
+
+  switch (radioStep) {
+    case 0: // Model A generates images
+      svg.querySelector('#arrow1').setAttribute('opacity', '1');
+      svg.querySelectorAll('.rimg').forEach((r, i) => {
+        setTimeout(() => r.setAttribute('opacity', '1'), i * 120);
+      });
+      // show watermark dots on all (they're BitMark images)
+      svg.querySelectorAll('.wmdot').forEach((d, i) => {
+        setTimeout(() => d.setAttribute('opacity', '1'), 400 + i * 120);
+      });
+      caption.innerHTML = RADIO_CAPTIONS[0];
+      break;
+    case 1: // Spread
+      caption.innerHTML = RADIO_CAPTIONS[1];
+      // gentle float animation via CSS-less attr tweaking
+      svg.querySelectorAll('.rimg').forEach((r, i) => {
+        const cur = r.getAttribute('transform');
+        r.style.transition = 'transform 1.5s ease';
+      });
+      break;
+    case 2: // Model B trains
+      svg.querySelector('#arrow2').setAttribute('opacity', '1');
+      svg.querySelector('#modelB').setAttribute('opacity', '1');
+      caption.innerHTML = RADIO_CAPTIONS[2];
+      break;
+    case 3: // Model B also watermarked
+      svg.querySelector('#modelBGlow').setAttribute('fill', 'url(#modelGrad2)');
+      svg.querySelector('#modelBRing').setAttribute('stroke', '#fbbf24');
+      svg.querySelector('#modelBCore').setAttribute('stroke', '#fbbf24');
+      svg.querySelector('#modelBText').setAttribute('fill', '#fbbf24');
+      svg.querySelector('#modelBLabel').textContent = 'BITMARK ✓';
+      svg.querySelector('#modelBLabel').setAttribute('fill', '#fbbf24');
+      caption.innerHTML = RADIO_CAPTIONS[3];
+      // emit pulse
+      emitPulse();
+      break;
+    case 4: // loop
+      radioStep = -1;
+      // reset
+      svg.querySelector('#arrow1').setAttribute('opacity', '0');
+      svg.querySelector('#arrow2').setAttribute('opacity', '0');
+      svg.querySelectorAll('.rimg').forEach(r => r.setAttribute('opacity', '0'));
+      svg.querySelectorAll('.wmdot').forEach(d => d.setAttribute('opacity', '0'));
+      svg.querySelector('#modelB').setAttribute('opacity', '0.3');
+      svg.querySelector('#modelBGlow').setAttribute('fill', 'url(#modelGrad)');
+      svg.querySelector('#modelBRing').setAttribute('stroke', '#7dd3fc');
+      svg.querySelector('#modelBCore').setAttribute('stroke', '#7dd3fc');
+      svg.querySelector('#modelBText').setAttribute('fill', '#7dd3fc');
+      svg.querySelector('#modelBLabel').textContent = 'DERIVATIVE';
+      svg.querySelector('#modelBLabel').setAttribute('fill', '#94a3b8');
+      break;
+  }
+  radioStep++;
+}
+
+function emitPulse() {
+  const svg = document.getElementById('radioSvg');
+  const particles = svg.querySelector('#particles');
+  for (let i = 0; i < 3; i++) {
+    setTimeout(() => {
+      const c = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+      c.setAttribute('cx', '1020');
+      c.setAttribute('cy', '240');
+      c.setAttribute('r', '50');
+      c.setAttribute('fill', 'none');
+      c.setAttribute('stroke', '#fbbf24');
+      c.setAttribute('stroke-width', '1.5');
+      c.setAttribute('opacity', '0.9');
+      particles.appendChild(c);
+      // animate manually
+      let t = 0;
+      const anim = setInterval(() => {
+        t += 1;
+        c.setAttribute('r', 50 + t * 5);
+        c.setAttribute('opacity', Math.max(0, 0.9 - t * 0.045));
+        if (t > 22) { clearInterval(anim); c.remove(); }
+      }, 40);
+    }, i * 500);
+  }
+}
+
+// ═══════════════════════════════════════════════════════════
+// INIT
+// ═══════════════════════════════════════════════════════════
+initScales();
+goto(0);
+
+// Swipe support for iPad
+let touchStartX = 0;
+document.addEventListener('touchstart', e => { touchStartX = e.touches[0].clientX; }, {passive: true});
+document.addEventListener('touchend', e => {
+  const dx = e.changedTouches[0].clientX - touchStartX;
+  if (Math.abs(dx) > 80) {
+    if (dx < 0) next(); else prev();
+  }
+}, {passive: true});
+</script>
+</body>
+</html>
